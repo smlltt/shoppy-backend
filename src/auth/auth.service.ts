@@ -2,17 +2,17 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { User } from '@prisma/client';
-import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import ms, { StringValue } from 'ms';
 import { ConfigService } from '@nestjs/config';
 import { TokenPayload } from './token-payload.interface';
+import { JwtAuthService } from './jwt/jwt.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
+    private readonly jwtService: JwtAuthService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -39,13 +39,12 @@ export class AuthService {
       expires.getMilliseconds() +
         ms(this.configService.getOrThrow<StringValue>('JWT_EXPIRATION')),
     );
-    const tokenPayload: TokenPayload = { userId: user.id };
-    const token = this.jwtService.sign(tokenPayload);
+    const { token } = this.jwtService.login(user);
     response.cookie('Authentication', token, {
       httpOnly: true,
       secure: true,
       expires,
     });
-    return { tokenPayload };
+    return { user: user.id };
   }
 }

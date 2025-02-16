@@ -21,7 +21,9 @@ import { AuthModule } from './auth/auth.module';
       },
       inject: [ConfigService],
     }),
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     UsersModule,
     AuthModule,
   ],
