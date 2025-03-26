@@ -17,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  //what is returned from validate is attached ookie-parserto the req (so the userId)
+  //what is returned from validate is attached the req (so the userId)
   async validate(payload: TokenPayload) {
     return payload;
   }

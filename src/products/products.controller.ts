@@ -3,9 +3,9 @@ import {
   Controller,
   Get,
   Post,
-  Query,
   UseGuards,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { NoFilesInterceptor } from '@nestjs/platform-express';
@@ -13,6 +13,7 @@ import { CreateProductRequest } from './dto/create-product.request';
 import { JWTAuthGuard } from '@auth/jwt/jwt.guard';
 import { CurrentUser } from '@auth/current-user.decorator';
 import { TokenPayload } from '@auth/token-payload.interface';
+import { PaginationDto } from './dto/pagination';
 
 @Controller('products')
 export class ProductsController {
@@ -29,7 +30,10 @@ export class ProductsController {
 
   @Get()
   @UseGuards(JWTAuthGuard)
-  getProducts(@Query('userId') userId: number) {
-    return this.productsService.getProducts(userId);
+  getProducts(
+    @CurrentUser() user: TokenPayload,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.productsService.getProducts(user.userId, paginationDto);
   }
 }
