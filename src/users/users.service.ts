@@ -8,7 +8,9 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async createUser(data: CreateUserRequest): Promise<Omit<User, 'password'>> {
+  async createUser(
+    data: CreateUserRequest,
+  ): Promise<Omit<User, 'password'> | undefined> {
     try {
       return await this.prismaService.user.create({
         data: {
@@ -20,9 +22,8 @@ export class UsersService {
           id: true,
         },
       });
-    } catch (error) {
-      console.log('error details', error);
-      if (error.code === 'P2002') {
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
         throw new UnprocessableEntityException('Email already exists');
       }
     }
