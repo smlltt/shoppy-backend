@@ -4,6 +4,8 @@ import { CreateProductRequest } from './dto/create-product.request';
 import { Product } from '@prisma/client';
 import { PaginationDto } from './dto/pagination';
 import { Prisma } from '@prisma/client';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class ProductsService {
@@ -54,11 +56,32 @@ export class ProductsService {
       this.prismaService.product.count({ where: query.where }),
     ]);
 
+    const mappedProducts = await Promise.all(
+      products.map(async (item) => {
+        return {
+          ...item,
+          hasImage: await this.imageEsists(item.id),
+        };
+      }),
+    );
+
     return {
       pagination: {
         total: count,
       },
-      data: products,
+      data: mappedProducts,
     };
+  }
+
+  private async imageEsists(productId: number) {
+    try {
+      await fs.access(
+        join(__dirname, '../../', `public/products/${productId}.jpg`),
+        fs.constants.F_OK,
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
