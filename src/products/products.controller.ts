@@ -10,6 +10,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  Param,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
@@ -20,6 +21,7 @@ import { TokenPayload } from '@auth/token-payload.interface';
 import { PaginationDto } from './dto/pagination';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { PRODUCT_IMAGES } from './product-images';
 
 @Controller('products')
 export class ProductsController {
@@ -38,7 +40,7 @@ export class ProductsController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: 'public/products',
+        destination: PRODUCT_IMAGES,
         filename: (req, file, callback) => {
           const filename = `${req.params.productId}${extname(file.originalname)}`;
           callback(null, filename);
@@ -85,10 +87,13 @@ export class ProductsController {
 
   @Get()
   @UseGuards(JWTAuthGuard)
-  getProducts(
-    @CurrentUser() user: TokenPayload,
-    @Query() paginationDto: PaginationDto,
-  ) {
-    return this.productsService.getProducts(user.userId, paginationDto);
+  getProducts(@Query() paginationDto: PaginationDto) {
+    return this.productsService.getProducts(paginationDto);
+  }
+
+  @Get(':productId')
+  @UseGuards(JWTAuthGuard)
+  getProduct(@Param('productId') productId: number) {
+    return this.productsService.getProduct(productId);
   }
 }

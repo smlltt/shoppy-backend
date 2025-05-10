@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductRequest } from './dto/create-product.request';
 import { Product } from '@prisma/client';
@@ -6,6 +6,7 @@ import { PaginationDto } from './dto/pagination';
 import { Prisma } from '@prisma/client';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { PRODUCT_IMAGES } from './product-images';
 
 @Injectable()
 export class ProductsService {
@@ -33,10 +34,7 @@ export class ProductsService {
     }
   }
 
-  async getProducts(
-    userId: number,
-    pagination: PaginationDto,
-  ): Promise<{
+  async getProducts(pagination: PaginationDto): Promise<{
     pagination: { total: number };
     data: Omit<Product, 'userId'>[];
   }> {
@@ -46,7 +44,7 @@ export class ProductsService {
       },
       take: 6,
       skip: pagination?.page * 6 || 0,
-      where: { userId },
+
       omit: {
         userId: true,
       },
@@ -73,10 +71,29 @@ export class ProductsService {
     };
   }
 
+  async getProduct(productId: number): Promise<{
+    data: Omit<Product, 'userId'>;
+  }> {
+    try {
+      const product = {
+        ...(await this.prismaService.product.findUniqueOrThrow({
+          where: { id: Number(productId) },
+        })),
+        hasImage: await this.imageEsists(Number(productId)),
+      };
+
+      return {
+        data: product,
+      };
+    } catch (error) {
+      throw new NotFoundException(`Product not found with id ${productId}`);
+    }
+  }
+
   private async imageEsists(productId: number) {
     try {
       await fs.access(
-        join(__dirname, '../../', `public/products/${productId}.jpg`),
+        join(`${PRODUCT_IMAGES}/${productId}.jpg`),
         fs.constants.F_OK,
       );
       return true;
