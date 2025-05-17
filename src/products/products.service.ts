@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductRequest } from './dto/create-product.request';
 import { Product } from '@prisma/client';
@@ -17,7 +22,7 @@ export class ProductsService {
     userId: number,
   ): Promise<Omit<Product, 'createdAt' | 'updatedAt'> | undefined> {
     try {
-      const payload = { ...data, userId };
+      const payload = { ...data, sold: false, userId };
 
       return await this.prismaService.product.create({
         data: payload,
@@ -27,6 +32,7 @@ export class ProductsService {
           price: true,
           userId: true,
           id: true,
+          sold: true,
         },
       });
     } catch (error) {
@@ -88,6 +94,13 @@ export class ProductsService {
     } catch (error) {
       throw new NotFoundException(`Product not found with id ${productId}`);
     }
+  }
+
+  async updateProduct(productId: number, data: Prisma.ProductUpdateInput) {
+    return this.prismaService.product.update({
+      where: { id: Number(productId) },
+      data,
+    });
   }
 
   private async imageEsists(productId: number) {

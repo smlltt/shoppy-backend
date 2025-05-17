@@ -29,4 +29,5 @@ model Product {
   userId      Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  sold        Boolean  @default(false)
 }

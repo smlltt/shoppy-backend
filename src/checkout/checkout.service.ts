@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StringValue } from 'ms';
 import { ProductsService } from 'src/products/products.service';
@@ -32,6 +32,23 @@ export class CheckoutService {
         },
       ],
       mode: 'payment',
+      metadata: {
+        productId,
+      },
     });
+  }
+  async handleCheckoutWebhooks(body: Stripe.Event) {
+    if (body.type !== 'checkout.session.completed') {
+      return;
+    }
+    const session = await this.stripe.checkout.sessions.retrieve(
+      body.data.object.id,
+    );
+    await this.productService.updateProduct(
+      Number(session.metadata.productId),
+      {
+        sold: true,
+      },
+    );
   }
 }
