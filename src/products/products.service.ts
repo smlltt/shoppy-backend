@@ -12,10 +12,14 @@ import { Prisma } from '@prisma/client';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { PRODUCT_IMAGES } from './product-images';
+import { ProductsGateway } from './products-gateway';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly productsGateway: ProductsGateway,
+  ) {}
 
   async createProduct(
     data: CreateProductRequest,
@@ -24,7 +28,7 @@ export class ProductsService {
     try {
       const payload = { ...data, sold: false, userId };
 
-      return await this.prismaService.product.create({
+      const product = await this.prismaService.product.create({
         data: payload,
         select: {
           name: true,
@@ -35,12 +39,17 @@ export class ProductsService {
           sold: true,
         },
       });
+      this.productsGateway.handleProductUpdated();
+      return product;
     } catch (error) {
       console.log('error details', error);
     }
   }
 
-  async getProducts(pagination: PaginationDto): Promise<{
+  async getProducts(
+    pagination: PaginationDto,
+    status?: string,
+  ): Promise<{
     pagination: { total: number };
     data: Omit<Product, 'userId'>[];
   }> {
@@ -50,6 +59,9 @@ export class ProductsService {
       },
       take: 6,
       skip: pagination?.page * 6 || 0,
+      where: {
+        sold: status === 'available' ? false : true,
+      },
 
       omit: {
         userId: true,
@@ -97,10 +109,12 @@ export class ProductsService {
   }
 
   async updateProduct(productId: number, data: Prisma.ProductUpdateInput) {
-    return this.prismaService.product.update({
+    const product = await this.prismaService.product.update({
       where: { id: Number(productId) },
       data,
     });
+    this.productsGateway.handleProductUpdated();
+    return product;
   }
 
   private async imageEsists(productId: number) {

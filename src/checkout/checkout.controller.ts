@@ -12,6 +12,8 @@ export class CheckoutController {
   async createSession(@Body() body: CreateCheckoutSessionRequest) {
     return this.checkoutService.createSession(body.id);
   }
+  // use the code below to listen to Stripe webhooks
+  // stripe listen --forward-to localhost:3001/checkout/webhook
   @Post('webhook')
   async handleCheckoutWebhooks(@Body() body: Stripe.Event) {
     return this.checkoutService.handleCheckoutWebhooks(body);
