@@ -87,8 +87,11 @@ export class ProductsController {
 
   @Get()
   @UseGuards(JWTAuthGuard)
-  getProducts(@Query() paginationDto: PaginationDto) {
-    return this.productsService.getProducts(paginationDto);
+  getProducts(
+    @Query() paginationDto: PaginationDto,
+    @Query('status') status?: string,
+  ) {
+    return this.productsService.getProducts(paginationDto, status);
   }
 
   @Get(':productId')
